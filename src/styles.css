@@ -135,6 +135,7 @@
 }
 .new-chat {
   height: 43px;
+  flex-shrink: 0;
   justify-content: flex-start;
   padding: 0 14px;
   font-size: 12px;
