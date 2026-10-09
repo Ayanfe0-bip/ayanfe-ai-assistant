@@ -91,7 +91,7 @@ export function ChatWorkspace({ threadId }: { threadId?: string }) {
     return () => {
       clearTimeout(timer.current);
     };
-  }, [thread?.id, thread?.messages.length]);
+  }, [thread]);
   const send = (value: string) => {
     const message = value.trim();
     if (!message || pending) return;

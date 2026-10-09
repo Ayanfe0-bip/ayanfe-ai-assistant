@@ -38,7 +38,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-layout">
       {open && <div className="nav-scrim" onClick={close} aria-hidden="true" />}
-      <aside className={`sidebar ${open ? "sidebar-open" : ""}`} aria-label="Main navigation">
+      <aside
+        className={`sidebar ${open ? "sidebar-open" : ""}`}
+        aria-label="Main navigation"
+        onKeyDown={(event) => { if (event.key === "Escape") close(); }}
+      >
         <div className="brand-row">
           <Link to="/" className="brand" onClick={close}>
             <img src={mark} alt="" width={38} height={38} />
