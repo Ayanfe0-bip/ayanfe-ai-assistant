@@ -10,33 +10,141 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CodingRouteImport } from './routes/coding'
+import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as ImagesRouteImport } from './routes/images'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as TutorRouteImport } from './routes/tutor'
+import { Route as WritingRouteImport } from './routes/writing'
+import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CodingRoute = CodingRouteImport.update({
+  id: '/coding',
+  path: '/coding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImagesRoute = ImagesRouteImport.update({
+  id: '/images',
+  path: '/images',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorRoute = TutorRouteImport.update({
+  id: '/tutor',
+  path: '/tutor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingRoute = WritingRouteImport.update({
+  id: '/writing',
+  path: '/writing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
+  id: '/chat/$threadId',
+  path: '/chat/$threadId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/coding': typeof CodingRoute
+  '/documents': typeof DocumentsRoute
+  '/history': typeof HistoryRoute
+  '/images': typeof ImagesRoute
+  '/settings': typeof SettingsRoute
+  '/tutor': typeof TutorRoute
+  '/writing': typeof WritingRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/coding': typeof CodingRoute
+  '/documents': typeof DocumentsRoute
+  '/history': typeof HistoryRoute
+  '/images': typeof ImagesRoute
+  '/settings': typeof SettingsRoute
+  '/tutor': typeof TutorRoute
+  '/writing': typeof WritingRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/coding': typeof CodingRoute
+  '/documents': typeof DocumentsRoute
+  '/history': typeof HistoryRoute
+  '/images': typeof ImagesRoute
+  '/settings': typeof SettingsRoute
+  '/tutor': typeof TutorRoute
+  '/writing': typeof WritingRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/coding'
+    | '/documents'
+    | '/history'
+    | '/images'
+    | '/settings'
+    | '/tutor'
+    | '/writing'
+    | '/chat/$threadId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/coding'
+    | '/documents'
+    | '/history'
+    | '/images'
+    | '/settings'
+    | '/tutor'
+    | '/writing'
+    | '/chat/$threadId'
+  id:
+    | '__root__'
+    | '/'
+    | '/coding'
+    | '/documents'
+    | '/history'
+    | '/images'
+    | '/settings'
+    | '/tutor'
+    | '/writing'
+    | '/chat/$threadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CodingRoute: typeof CodingRoute
+  DocumentsRoute: typeof DocumentsRoute
+  HistoryRoute: typeof HistoryRoute
+  ImagesRoute: typeof ImagesRoute
+  SettingsRoute: typeof SettingsRoute
+  TutorRoute: typeof TutorRoute
+  WritingRoute: typeof WritingRoute
+  ChatThreadIdRoute: typeof ChatThreadIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +156,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coding': {
+      id: '/coding'
+      path: '/coding'
+      fullPath: '/coding'
+      preLoaderRoute: typeof CodingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/images': {
+      id: '/images'
+      path: '/images'
+      fullPath: '/images'
+      preLoaderRoute: typeof ImagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutor': {
+      id: '/tutor'
+      path: '/tutor'
+      fullPath: '/tutor'
+      preLoaderRoute: typeof TutorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing': {
+      id: '/writing'
+      path: '/writing'
+      fullPath: '/writing'
+      preLoaderRoute: typeof WritingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/$threadId': {
+      id: '/chat/$threadId'
+      path: '/chat/$threadId'
+      fullPath: '/chat/$threadId'
+      preLoaderRoute: typeof ChatThreadIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CodingRoute: CodingRoute,
+  DocumentsRoute: DocumentsRoute,
+  HistoryRoute: HistoryRoute,
+  ImagesRoute: ImagesRoute,
+  SettingsRoute: SettingsRoute,
+  TutorRoute: TutorRoute,
+  WritingRoute: WritingRoute,
+  ChatThreadIdRoute: ChatThreadIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
