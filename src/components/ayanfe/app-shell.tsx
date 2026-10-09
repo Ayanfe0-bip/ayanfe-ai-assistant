@@ -41,7 +41,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside
         className={`sidebar ${open ? "sidebar-open" : ""}`}
         aria-label="Main navigation"
-        onKeyDown={(event) => { if (event.key === "Escape") close(); }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") close();
+        }}
       >
         <div className="brand-row">
           <Link to="/" className="brand" onClick={close}>
