@@ -15,3 +15,5 @@
 - Use AI Elements for transcript, markdown, composer, and loading primitives; shared chat foundations support a later secure streaming integration.
 - Keep each planned tool on its own content route with route-specific metadata; future tools can grow without crowding the mobile chat experience.
 - Define brand styling and semantic palette in the global stylesheet; reusable page classes keep presentation consistent.
+- Use the project's own Lovable Cloud backend as the single backend; do not link an external Supabase project, since Cloud cannot be removed once added to this project.
+- Keep backend credentials in environment variables and server-side code only; never place keys or secrets in client bundles or committed files.
