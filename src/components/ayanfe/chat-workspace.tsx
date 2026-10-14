@@ -64,8 +64,55 @@ prompt: "What are some creative ideas for a new project?",
 },
 ];
 
-const demoReply =
-"This is a demonstration response, not an AI-generated answer.\n\nYour message has been added to this conversation. No AI service is connected, so AYANFE AI cannot answer questions, write content, or analyze files yet.\n\nYou can continue testing the conversation or revisit it later. Signed-in users' conversations are being connected to persistent chat history.";
+type ChatRequestMessage = {
+role: "user" | "assistant";
+content: string;
+};
+
+async function requestAIResponse(
+messages: ChatRequestMessage[],
+): Promise<string> {
+const response = await fetch("/api/chat", {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+},
+body: JSON.stringify({ messages }),
+});
+
+let result: { answer?: string; error?: string };
+
+try {
+result = await response.json();
+} catch {
+throw new Error(
+"The server returned an unexpected response. Please try again.",
+);
+}
+
+if (!response.ok) {
+throw new Error(
+result.error || "AYANFE AI could not answer right now.",
+);
+}
+
+if (typeof result.answer !== "string" || !result.answer.trim()) {
+throw new Error("AYANFE AI returned an empty response.");
+}
+
+return result.answer;
+}
+
+function getMessageText(message: {
+role: string;
+parts: Array<{ type: string; text?: string }>;
+}): string {
+return message.parts
+.filter((part) => part.type === "text")
+.map((part) => part.text ?? "")
+.join("\n")
+.trim();
+}
 
 export function ChatWorkspace({ threadId }: { threadId?: string }) {
 const { threads, isLoading, createThread, append } = useDemoChat();
@@ -79,36 +126,22 @@ const [copied, setCopied] = useState<string>();
 
 const textarea = useRef<HTMLTextAreaElement>(null);
 const navigate = useNavigate();
-const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-const appendRef = useRef(append);
-appendRef.current = append;
+const requestController = useRef<AbortController | null>(null);
+const requestId = useRef(0);
+const lastHandledUserMessage = useRef<string | null>(null);
 
 useEffect(() => {
 textarea.current?.focus({ preventScroll: true });
+}, [threadId]);
 
-if (thread?.messages.at(-1)?.role === "user") {
-  setPending(true);
-
-  timer.current = setTimeout(() => {
-    appendRef.current(thread.id, {
-      id: crypto.randomUUID(),
-      role: "assistant",
-      parts: [{ type: "text", text: demoReply }],
-    });
-
-    setPending(false);
-    textarea.current?.focus({ preventScroll: true });
-  }, 1100);
-}
-
+useEffect(() => {
 return () => {
-  clearTimeout(timer.current);
+requestId.current += 1;
+requestController.current?.abort();
 };
+}, [threadId]);
 
-}, [thread]);
-
-const send = (value: string) => {
+const send = async (value: string) => {
 const message = value.trim();
 
 if (!message || pending) return;
@@ -121,21 +154,81 @@ if (message.length > 4000) {
 setError("");
 setText("");
 
-if (!thread) {
-  const id = createThread(message);
+let activeThreadId = thread?.id;
+
+if (!activeThreadId) {
+  activeThreadId = createThread(message);
 
   navigate({
     to: "/chat/$threadId",
-    params: { threadId: id },
-  });
-} else {
-  append(thread.id, {
-    id: crypto.randomUUID(),
-    role: "user",
-    parts: [{ type: "text", text: message }],
+    params: { threadId: activeThreadId },
   });
 
-  setPending(true);
+  return;
+}
+
+append(activeThreadId, {
+  id: crypto.randomUUID(),
+  role: "user",
+  parts: [{ type: "text", text: message }],
+});
+
+lastHandledUserMessage.current = null;
+
+setPending(true);
+
+const currentRequestId = ++requestId.current;
+const controller = new AbortController();
+requestController.current = controller;
+
+try {
+  const conversation = threads
+    .filter((item) => item.id === activeThreadId)
+    .flatMap((item) => item.messages)
+    .map((item) => ({
+      role: item.role,
+      content: getMessageText(item),
+    }))
+    .filter(
+      (item): item is ChatRequestMessage =>
+        (item.role === "user" || item.role === "assistant") &&
+        item.content.length > 0,
+    );
+
+  conversation.push({
+    role: "user",
+    content: message,
+  });
+
+  const answer = await requestAIResponse(conversation);
+
+  if (currentRequestId !== requestId.current) return;
+
+  append(activeThreadId, {
+    id: crypto.randomUUID(),
+    role: "assistant",
+    parts: [{ type: "text", text: answer }],
+  });
+
+  lastHandledUserMessage.current = message;
+  textarea.current?.focus({ preventScroll: true });
+} catch (caught) {
+  if (currentRequestId !== requestId.current) return;
+
+  if (caught instanceof Error && caught.name === "AbortError") {
+    return;
+  }
+
+  setError(
+    caught instanceof Error
+      ? caught.message
+      : "Something went wrong. Please try again.",
+  );
+} finally {
+  if (currentRequestId === requestId.current) {
+    setPending(false);
+    requestController.current = null;
+  }
 }
 
 };
@@ -146,12 +239,11 @@ await navigator.clipboard.writeText(content);
 setCopied(id);
 } catch {
 setError(
-"Your browser couldn’t copy this message. Please select and copy the text.",
+"Your browser couldn't copy this message. Please select and copy the text.",
 );
 }
 };
 
-// Wait for saved conversations to load before deciding a chat is missing.
 if (threadId && isLoading) {
 return (
 <main className="unavailable-chat" aria-live="polite">
@@ -166,7 +258,7 @@ if (threadId && !thread) {
 return (
 <div className="unavailable-chat">
 <img src={mark} alt="" width={64} height={64} />
-<h1>This conversation isn’t available</h1>
+<h1>This conversation isn't available</h1>
 <p>
 It may have been deleted, or you may need to sign in to the account
 that owns it.
@@ -179,9 +271,9 @@ that owns it.
 }
 
 return (
-  <main className={`chat-workspace ${thread ? "has-conversation" : ""}`}>
-    {!thread ? (
-      <div className="welcome">
+<main className={"chat-workspace ${thread ? "has-conversation" : ""}"}>
+{!thread ? (
+<div className="welcome">
 <div className="welcome-brand">
 <img
 src={mark}
@@ -200,7 +292,7 @@ A NEW SPACE FOR YOUR IDEAS
 
       <p className="welcome-description">
         A little inspiration. A clearer answer. Your next big idea.
-        <br className="desktop-break" /> Let’s see where your curiosity
+        <br className="desktop-break" /> Let's see where your curiosity
         takes you.
       </p>
 
@@ -230,7 +322,7 @@ A NEW SPACE FOR YOUR IDEAS
 
       <div className="welcome-caption">
         <span className="gold-line" />
-        BUILT FOR YOUR EVERYDAY. READY FOR YOUR WHAT’S NEXT.
+        BUILT FOR YOUR EVERYDAY. READY FOR YOUR WHAT'S NEXT.
         <span className="gold-line" />
       </div>
     </div>
@@ -252,9 +344,7 @@ A NEW SPACE FOR YOUR IDEAS
               {message.role === "assistant" && (
                 <img src={mark} alt="" width={25} height={25} />
               )}
-              {message.role === "assistant"
-                ? "AYANFE AI · Demo"
-                : "You"}
+              {message.role === "assistant" ? "AYANFE AI" : "You"}
             </div>
 
             <MessageContent
@@ -280,13 +370,7 @@ A NEW SPACE FOR YOUR IDEAS
                 title="Copy message"
                 aria-label="Copy message"
                 onClick={() =>
-                  copy(
-                    message.id,
-                    message.parts
-                      .filter((part) => part.type === "text")
-                      .map((part) => part.text)
-                      .join("\n"),
-                  )
+                  copy(message.id, getMessageText(message))
                 }
               >
                 {copied === message.id ? <Check /> : <Copy />}
@@ -298,7 +382,7 @@ A NEW SPACE FOR YOUR IDEAS
         {pending && (
           <div role="status" className="pending-response">
             <img src={mark} alt="" width={25} height={25} />
-            <Shimmer>Preparing demonstration response…</Shimmer>
+            <Shimmer>AYANFE AI is thinking...</Shimmer>
           </div>
         )}
       </ConversationContent>
@@ -310,20 +394,22 @@ A NEW SPACE FOR YOUR IDEAS
   <div className="composer-area">
     {!thread && (
       <div className="composer-heading">
-        <span>What’s on your mind?</span>
+        <span>What's on your mind?</span>
         <span>Start with a question or an idea</span>
       </div>
     )}
 
     <PromptInput
       className="ayanfe-composer"
-      onSubmit={({ text: submitted }) => send(submitted)}
+      onSubmit={({ text: submitted }) => {
+        void send(submitted);
+      }}
     >
       <PromptInputTextarea
         ref={textarea}
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder="Ask AYANFE anything…"
+        placeholder="Ask AYANFE anything..."
         aria-label="Message AYANFE AI"
         maxLength={4001}
         disabled={pending || Boolean(threadId && isLoading)}
@@ -334,31 +420,18 @@ A NEW SPACE FOR YOUR IDEAS
           <img src={mark} alt="" width={18} height={18} />
           AYANFE AI
           <span className="mode-divider" />
-          Demo
+          AI chat
         </span>
 
         <PromptInputSubmit
-          aria-label={
-            pending ? "Stop demonstration response" : "Send message"
-          }
+          aria-label={pending ? "Stop response" : "Send message"}
           status={pending ? "streaming" : "ready"}
           disabled={!pending && !text.trim()}
           onStop={() => {
-            clearTimeout(timer.current);
+            requestId.current += 1;
+            requestController.current?.abort();
+            requestController.current = null;
             setPending(false);
-
-            if (thread) {
-              append(thread.id, {
-                id: crypto.randomUUID(),
-                role: "assistant",
-                parts: [
-                  {
-                    type: "text",
-                    text: "Demonstration response stopped. No AI service was contacted.",
-                  },
-                ],
-              });
-            }
           }}
           className="send-control"
         >
@@ -376,7 +449,8 @@ A NEW SPACE FOR YOUR IDEAS
     <p className="demo-disclaimer">
       <ShieldCheck size={13} />
       <span>
-        Demo experience. Responses are simulated, not generated by AI.
+        AI responses require a configured server API key. Messages may
+        remain only in this session until persistent storage is connected.
       </span>
     </p>
   </div>
@@ -391,4 +465,4 @@ A NEW SPACE FOR YOUR IDEAS
 </main>
 
 );
-            }
+}
