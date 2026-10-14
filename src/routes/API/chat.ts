@@ -191,12 +191,23 @@ export const Route = createFileRoute("/api/chat")({
             );
           }
 
-          const apiKey = process.env.OPENAI_API_KEY;
+         const apiKey = process.env.OPENAI_API_KEY;
 
-          if (!apiKey) {
-            console.error(
-              "AYANFE AI configuration error: OPENAI_API_KEY is missing.",
-            );
+if (!apiKey || !apiKey.trim()) {
+  console.error(
+    "AYANFE AI diagnostic: OPENAI_API_KEY is missing or empty.",
+  );
+
+  return Response.json(
+    {
+      error:
+        "The server cannot access OPENAI_API_KEY. Check the production environment variables and deployment.",
+    },
+    { status: 503 },
+  );
+}
+
+console.log("AYANFE AI diagnostic: API key detected."); 
 
             return jsonError(
               "AYANFE AI is not connected yet. The server API key needs to be configured.",
