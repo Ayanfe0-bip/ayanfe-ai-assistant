@@ -86,11 +86,11 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       } else if (reset) {
         const { error: authError } =
           await supabase.auth.resetPasswordForEmail(
-            email.trim(),
-            {
-              redirectTo: window.location.origin + "/login",
-            }
-          );
+  email.trim(),
+  {
+    redirectTo: window.location.origin + "/reset-password",
+  }
+);
 
         if (authError) throw authError;
 
