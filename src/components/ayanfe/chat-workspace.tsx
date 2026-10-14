@@ -179,8 +179,9 @@ that owns it.
 }
 
 return (
-<main className={`chat-workspace ${thread ? "has-conversation" : ""}`}>
-<div className="welcome">
+  <main className={`chat-workspace ${thread ? "has-conversation" : ""}`}>
+    {!thread ? (
+      <div className="welcome">
 <div className="welcome-brand">
 <img
 src={mark}
