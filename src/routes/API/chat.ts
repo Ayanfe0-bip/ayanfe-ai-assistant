@@ -191,29 +191,22 @@ export const Route = createFileRoute("/api/chat")({
             );
           }
 
-         const apiKey = process.env.OPENAI_API_KEY;
+          // Read the API key from the server environment.
+          // Never expose the key to the browser or log its value.
+          const apiKey = process.env.OPENAI_API_KEY;
 
-if (!apiKey || !apiKey.trim()) {
-  console.error(
-    "AYANFE AI diagnostic: OPENAI_API_KEY is missing or empty.",
-  );
-
-  return Response.json(
-    {
-      error:
-        "The server cannot access OPENAI_API_KEY. Check the production environment variables and deployment.",
-    },
-    { status: 503 },
-  );
-}
-
-console.log("AYANFE AI diagnostic: API key detected."); 
+          if (!apiKey || !apiKey.trim()) {
+            console.error(
+              "AYANFE AI: OPENAI_API_KEY is missing or empty.",
+            );
 
             return jsonError(
-              "AYANFE AI is not connected yet. The server API key needs to be configured.",
+              "The server cannot access OPENAI_API_KEY. Check the production environment variables and deployment.",
               503,
             );
           }
+
+          console.log("AYANFE AI: Server API key detected.");
 
           const upstreamController = new AbortController();
 
@@ -263,7 +256,7 @@ console.log("AYANFE AI diagnostic: API key detected.");
             );
 
             return jsonError(
-              "AYANFE AI could not connect to the AI service. Please check your connection and try again.",
+              "AYANFE AI could not connect to the AI service. Please try again.",
               502,
             );
           } finally {
@@ -274,15 +267,16 @@ console.log("AYANFE AI diagnostic: API key detected.");
             let providerError: OpenAIResponse = {};
 
             try {
-              providerError = (await upstreamResponse.json()) as OpenAIResponse;
+              providerError =
+                (await upstreamResponse.json()) as OpenAIResponse;
             } catch {
-              // The provider did not return a readable JSON error.
+              // The provider did not return readable JSON.
             }
 
             const providerCode = providerError.error?.code;
             const providerStatus = upstreamResponse.status;
 
-            // Log status and error code only, never the API key.
+            // Log diagnostic information, never the API key.
             console.error("AYANFE AI provider error:", {
               status: providerStatus,
               code: providerCode,
@@ -290,7 +284,7 @@ console.log("AYANFE AI diagnostic: API key detected.");
 
             if (providerStatus === 401) {
               return jsonError(
-                "The AI provider rejected the API credentials. Please check the server API key.",
+                "The AI provider rejected the API credentials. Check the server API key.",
                 502,
               );
             }
@@ -327,7 +321,7 @@ console.log("AYANFE AI diagnostic: API key detected.");
 
             if (providerStatus === 400) {
               return jsonError(
-                "The AI provider rejected the request. Please try a shorter message or check the model configuration.",
+                "The AI provider rejected the request. Check the model configuration or request format.",
                 400,
               );
             }
@@ -348,7 +342,8 @@ console.log("AYANFE AI diagnostic: API key detected.");
           let result: OpenAIResponse;
 
           try {
-            result = (await upstreamResponse.json()) as OpenAIResponse;
+            result =
+              (await upstreamResponse.json()) as OpenAIResponse;
           } catch {
             return jsonError(
               "The AI service returned an unreadable response.",
